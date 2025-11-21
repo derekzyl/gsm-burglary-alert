@@ -136,35 +136,7 @@
 
 8. **Testing:** Test each component individually before final assembly. Use a multimeter to verify connections.
 
-## Recommended Suppliers
 
-- **AliExpress/Banggood:** Longer shipping times
-- **DigiKey/Mouser:** Fast shipping, reliable components (US/EU)
-- **Amazon:** Fast delivery, good for tools and common components
-- **Local Electronics Stores:** Immediate availability
-
-## Order of Assembly
-
-1. **Prototype on breadboard** - Test ESP32, GSM module, and basic sensors
-2. **Design power supply** - Build and test power supply circuit
-3. **Integrate sensors** - Connect all sensors and test individually
-4. **Add actuators** - Connect siren and relay, test control
-5. **Final assembly** - Mount in enclosure, final wiring
-6. **Software upload** - Program ESP32 with firmware
-7. **Testing** - Comprehensive system testing
-8. **Deployment** - Install at location and configure
-
-## Future Enhancements (Optional)
-
-- **Camera Module:** ESP32-CAM for visual monitoring
-- **Solar Panel:** For battery charging in outdoor installations
-- **LCD Display:** Local status display
-- **Keypad:** For local arming/disarming
-- **Multiple Zones:** Separate sensor groups with individual control
-- **Home Automation Integration:** MQTT bridge for smart home systems
-
----
-
-**Last Updated:** 2024
+**Last Updated:** 2025
 **Version:** 1.0
 
