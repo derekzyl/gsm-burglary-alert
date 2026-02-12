@@ -8,9 +8,9 @@
 #define CONFIG_H
 
 // ==================== NETWORK CONFIGURATION ====================
-#define WIFI_SSID "your_wifi_ssid"
-#define WIFI_PASSWORD "your_wifi_password"
-#define BACKEND_URL "http://192.168.1.100:8000"
+#define WIFI_SSID "cybergenii"
+#define WIFI_PASSWORD "12341234"
+#define BACKEND_URL "https://xenophobic-netta-cybergenii-1584fde7.koyeb.app"
 #define API_KEY "esp32_device_key_xyz789"
 
 // ==================== GSM CONFIGURATION ====================
