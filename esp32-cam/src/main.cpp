@@ -30,7 +30,6 @@ unsigned long lastCaptureTime = 0; // Added for cooldown
 unsigned long lastQueueCheckTime = 0;
 unsigned long lastHeartbeatTime = 0;
 const unsigned long TRIGGER_COOLDOWN = 5000;  // 5 seconds between captures
-const unsigned long TRIGGER_COOLDOWN = 5000;  // 5 seconds between captures
 const unsigned long QUEUE_CHECK_INTERVAL = 30000;  // Check queue every 30 seconds
 
 #include <esp_now.h>
@@ -261,7 +260,7 @@ void setup() {
 
     if (uploader.isConnected()) {
         digitalWrite(STATUS_LED_PIN, HIGH);  // LED on = connected
-        
+
         // Initialize NTP
         Serial.println("\n--- NTP Time Sync ---");
         if (ntpSync.begin()) {
@@ -269,11 +268,16 @@ void setup() {
         } else {
             Serial.println("✗ NTP sync failed - timestamps may be inaccurate");
         }
-        
+
         // Check for queued images
         Serial.println("\n--- Checking Image Queue ---");
         uploadQueuedImages();
-        
+
+        // Boot test: capture one snapshot and send to backend (verifies camera + WiFi + backend)
+        Serial.println("\n--- Boot Test: Capture & Upload ---");
+        captureAndUpload();
+        lastCaptureTime = millis();  // so first trigger in loop is not skipped by cooldown
+
     } else {
         Serial.println("WiFi connection failed after retries - offline mode");
         digitalWrite(STATUS_LED_PIN, LOW);

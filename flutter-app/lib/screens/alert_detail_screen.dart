@@ -17,9 +17,11 @@ class AlertDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (alert.imageUrl != null)
+            if (alert.imageUrl != null && alert.imageUrl!.isNotEmpty)
               CachedNetworkImage(
-                imageUrl: "${AppConfig.baseUrl}${alert.imageUrl}",
+                imageUrl: alert.imageUrl!.startsWith('http')
+                    ? alert.imageUrl!
+                    : "${AppConfig.baseUrl}${alert.imageUrl}",
                 fit: BoxFit.cover,
                 placeholder: (context, url) => const SizedBox(
                   height: 300,

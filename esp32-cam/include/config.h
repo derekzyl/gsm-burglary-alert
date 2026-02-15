@@ -8,8 +8,8 @@
 #define CONFIG_H
 
 // ==================== NETWORK CONFIGURATION ====================
-#define WIFI_SSID "DAVIES"
-#define WIFI_PASSWORD "DAVIES222"
+#define WIFI_SSID "cybergenii"
+#define WIFI_PASSWORD "12341234"
 #define BACKEND_URL "https://xenophobic-netta-cybergenii-1584fde7.koyeb.app/api/v1/burglary/image/image"
 #define API_KEY "esp32_device_key_xyz789"
 
