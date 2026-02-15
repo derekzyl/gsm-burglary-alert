@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include "esp_camera.h"
 
 class HTTPUploader {
@@ -27,6 +28,7 @@ public:
     bool connectWiFi();
     bool isConnected();
     int getSignalStrength();
+    bool sendHeartbeat(const char* deviceId, const char* status, const char* ip, const char* version);
 };
 
 #endif // HTTP_UPLOAD_H

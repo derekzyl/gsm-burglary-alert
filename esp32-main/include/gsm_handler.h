@@ -22,8 +22,9 @@ public:
     GSMHandler(HardwareSerial* serial);
     
     bool begin();
-    bool sendSMS(const char* phoneNumber, const char* message);
+    bool sendSMS(const char* phoneNumber, const char* message, bool force = false);
     bool isNetworkRegistered();
+    bool isReady() const { return initialized; }
     int getSignalStrength();
     bool canSendSMS();  // Rate limiting check
 };

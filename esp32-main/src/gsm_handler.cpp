@@ -4,7 +4,7 @@
  */
 
 #include "gsm_handler.h"
-#include "../include/config.h"
+#include "config.h"
 
 GSMHandler::GSMHandler(HardwareSerial* serial) 
     : gsmSerial(serial), lastSMSTime(0), initialized(false) {
@@ -13,13 +13,21 @@ GSMHandler::GSMHandler(HardwareSerial* serial)
 bool GSMHandler::begin() {
     gsmSerial->begin(9600, SERIAL_8N1, GSM_RX_PIN, GSM_TX_PIN);
     delay(3000);  // Give module time to start
-    
+
+    // Drain any garbage on the line (helps on 38-pin / noisy boards)
+    while (gsmSerial->available()) gsmSerial->read();
+    delay(200);
+
     Serial.println("Initializing GSM module...");
-    
-    // Test communication
+
+    // Test communication (retry once in case of cold start)
     if (!sendATCommand("AT", "OK", 2000)) {
-        Serial.println("GSM: No response to AT");
-        return false;
+        delay(500);
+        while (gsmSerial->available()) gsmSerial->read();
+        if (!sendATCommand("AT", "OK", 3000)) {
+            Serial.println("GSM: No response to AT - check wiring (TX/RX crossed?) and power (2A supply)");
+            return false;
+        }
     }
     
     // Disable echo
@@ -36,7 +44,9 @@ bool GSMHandler::begin() {
     for (int i = 0; i < 30; i++) {  // Try for 30 seconds
         if (isNetworkRegistered()) {
             initialized = true;
-            Serial.println("GSM initialized successfully!");
+            // Enable SIM800L netlight LED so module's LED shows network status (blink = working)
+            sendATCommand("AT+CNETLIGHT=1");
+            Serial.println("GSM initialized successfully! (Netlight LED enabled)");
             return true;
         }
         delay(1000);
@@ -130,13 +140,14 @@ bool GSMHandler::canSendSMS() {
     return true;
 }
 
-bool GSMHandler::sendSMS(const char* phoneNumber, const char* message) {
-    if (!initialized) {
+bool GSMHandler::sendSMS(const char* phoneNumber, const char* message, bool force) {
+    if (!initialized && !force) {
         Serial.println("GSM not initialized");
         return false;
     }
     
-    if (!canSendSMS()) {
+    if (!canSendSMS() && !force) {
+        Serial.println("SMS rate limit active (use force to bypass)");
         return false;
     }
     

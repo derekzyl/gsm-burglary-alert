@@ -4,7 +4,7 @@
  */
 
 #include "spiffs_manager.h"
-#include "../include/config.h"
+#include "config.h"
 
 SPIFFSManager::SPIFFSManager() : initialized(false) {
 }

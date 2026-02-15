@@ -3,7 +3,7 @@
  */
 
 #include "buzzer.h"
-#include "../include/config.h"
+#include "config.h"
 
 Buzzer::Buzzer(int buzzerPin) : pin(buzzerPin) {
 }

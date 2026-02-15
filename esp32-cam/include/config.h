@@ -8,8 +8,8 @@
 #define CONFIG_H
 
 // ==================== NETWORK CONFIGURATION ====================
-#define WIFI_SSID "cybergenii"
-#define WIFI_PASSWORD "12341234"
+#define WIFI_SSID "DAVIES"
+#define WIFI_PASSWORD "DAVIES222"
 #define BACKEND_URL "https://xenophobic-netta-cybergenii-1584fde7.koyeb.app/api/v1/burglary/image/image"
 #define API_KEY "esp32_device_key_xyz789"
 
@@ -21,6 +21,9 @@
 // ==================== PIN DEFINITIONS ====================
 // Trigger Input from ESP32 Main
 #define TRIGGER_PIN 13  // From ESP32 main GPIO 4
+
+// UART Output to ESP32 Main
+#define UART_TX_PIN 14   // U0TXD (Standard Serial TX) -> Connect to ESP32 Main GPIO 33
 
 // Status LED
 #define STATUS_LED_PIN 33  // Built-in LED (usually GPIO 33 on AI Thinker)
@@ -65,6 +68,7 @@
 #define NTP_SYNC_INTERVAL_MS 3600000  // Re-sync NTP every hour
 #define TRIGGER_DEBOUNCE_MS 100  // Debounce trigger input
 #define MIN_SIGNAL_STRENGTH -70  // Minimum WiFi RSSI for upload attempt
+#define HEARTBEAT_INTERVAL_MS 60000  // 1 minute heartbeat
 
 // ==================== STATUS LED PATTERNS ====================
 #define LED_BLINK_FAST 100  // Fast blink for activity

@@ -4,8 +4,9 @@
  */
 
 #include "http_client.h"
-#include "../include/config.h"
+#include "config.h"
 #include <ArduinoJson.h>
+#include <time.h>
 
 BackendClient::BackendClient(const char* url, const char* key) 
     : baseUrl(url), apiKey(key), retryCount(0), lastRetryTime(0) {
@@ -54,9 +55,13 @@ bool BackendClient::postAlert(HumanDetectionResult& detection, const char* netwo
         return false;
     }
     
+    // Get current epoch time
+    time_t now = time(nullptr);
+    unsigned long timestamp = (unsigned long)now * 1000;  // Convert to milliseconds
+    
     // Prepare JSON payload
     StaticJsonDocument<512> doc;
-    doc["timestamp"] = millis();  // Will be converted to epoch time on backend
+    doc["timestamp"] = timestamp;
     doc["detection_confidence"] = detection.confidence;
     doc["pir_left"] = detection.pir_left;
     doc["pir_middle"] = detection.pir_middle;
@@ -96,4 +101,43 @@ bool BackendClient::postAlert(HumanDetectionResult& detection, const char* netwo
     
     http.end();
     return false;
+}
+
+bool BackendClient::sendHeartbeat(const char* deviceId, const char* status, const char* ip, const char* version) {
+    if (!isConnected()) {
+        return false;
+    }
+    
+    // Prepare JSON payload
+    StaticJsonDocument<256> doc;
+    doc["device_id"] = deviceId;
+    doc["status"] = status;
+    doc["ip_address"] = ip;
+    doc["firmware_version"] = version;
+    
+    String payload;
+    serializeJson(doc, payload);
+    
+    String url = String(baseUrl) + "/api/v1/burglary/device/heartbeat";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("X-API-Key", apiKey);
+    http.setTimeout(SERVER_TIMEOUT_MS);
+    
+    int httpCode = http.POST(payload);
+    bool success = false;
+    
+    if (httpCode > 0) {
+        if (httpCode == HTTP_CODE_OK) {
+            success = true;
+        } else {
+            Serial.printf("Heartbeat HTTP Error: %d\n", httpCode);
+        }
+    } else {
+        Serial.printf("Heartbeat Failed: %s\n", http.errorToString(httpCode).c_str());
+    }
+    
+    http.end();
+    return success;
 }

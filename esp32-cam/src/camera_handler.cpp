@@ -4,7 +4,7 @@
  */
 
 #include "camera_handler.h"
-#include "../include/config.h"
+#include "config.h"
 
 CameraHandler::CameraHandler() : initialized(false) {
 }

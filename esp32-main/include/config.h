@@ -13,8 +13,17 @@
 #define BACKEND_URL "https://xenophobic-netta-cybergenii-1584fde7.koyeb.app"
 #define API_KEY "esp32_device_key_xyz789"
 
+// ==================== ESP-NOW CONFIGURATION ====================
+// REPLACE WITH YOUR ESP32-CAM MAC ADDRESS
+// Example: {0x24, 0x6F, 0x28, 0xAE, 0x12, 0x34}
+#define ESP32_CAM_MAC {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} 
+#define USE_ESP_NOW true
+
+
 // ==================== GSM CONFIGURATION ====================
-#define EMERGENCY_PHONE "+1234567890"  // Phone number for SMS alerts
+// Emergency Phones
+extern const char* EMERGENCY_PHONES[];
+const int NUM_PHONES = 2;
 #define APN "your.apn.here"  // Your mobile operator's APN
 
 // ==================== PIN DEFINITIONS ====================
@@ -28,12 +37,15 @@
 #define ULTRASONIC_TRIG_PIN 19
 
 // SIM800L GSM Module
-#define GSM_TX_PIN 16  // ESP32 TX to SIM800L RX
-#define GSM_RX_PIN 17  // ESP32 RX from SIM800L TX
-#define GSM_PWR_PIN 4  // Power control (if needed)
+// Wiring: ESP32 TX -> SIM800L RX,  ESP32 RX <- SIM800L TX,  GND common.
+// Option A: GPIO 16/17 (if SMS works; some 38-pin boards have issues here)
+// Option B: GPIO 33/32 (recommended for ESP32 38-pin - often more stable)
+#define GSM_TX_PIN 33  // ESP32 TX -> SIM800L RX (use 16 for Option A)
+#define GSM_RX_PIN 32  // ESP32 RX <- SIM800L TX (use 17 for Option A)
+// SIM800L needs 3.4–4.4V @ 2A peak; use external supply, not ESP32 3.3V.
 
 // ESP32-CAM Trigger
-#define CAM_TRIGGER_PIN 4  // Trigger signal to ESP32-CAM GPIO 13
+#define CAM_TRIGGER_PIN 27  // Trigger signal to ESP32-CAM GPIO 13
 
 // Buzzer
 #define BUZZER_PIN 25  // DAC pin for tone generation
@@ -41,9 +53,12 @@
 // Status LED
 #define STATUS_LED_PIN 2  // Built-in LED
 
+// SIM/GSM status LED - blinks when GSM is registered, pattern when SMS sent (use same pin as STATUS_LED_PIN if no extra LED)
+#define SIM_STATUS_LED_PIN 4
+
 // UART Backup to ESP32-CAM
-#define UART2_TX_PIN 32  // To ESP32-CAM RX backup
-#define UART2_RX_PIN 33  // From ESP32-CAM TX backup
+// RX Only - receive images/status from ESP32-CAM
+#define UART2_RX_PIN 35  // From ESP32-CAM TX backup
 
 // ==================== DETECTION PARAMETERS ====================
 #define DETECTION_WINDOW_MS 2000  // Time window for PIR triggers (ms)

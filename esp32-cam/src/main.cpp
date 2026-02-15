@@ -11,11 +11,11 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include "include/config.h"
-#include "src/camera_handler.h"
-#include "src/ntp_sync.h"
-#include "src/spiffs_manager.h"
-#include "src/http_upload.h"
+#include "config.h"
+#include "camera_handler.h"
+#include "ntp_sync.h"
+#include "spiffs_manager.h"
+#include "http_upload.h"
 
 // Global objects
 CameraHandler camera;
@@ -26,9 +26,22 @@ HTTPUploader uploader(BACKEND_URL, API_KEY);
 // State variables
 volatile bool triggerReceived = false;
 unsigned long lastTriggerTime = 0;
+unsigned long lastCaptureTime = 0; // Added for cooldown
 unsigned long lastQueueCheckTime = 0;
+unsigned long lastHeartbeatTime = 0;
+const unsigned long TRIGGER_COOLDOWN = 5000;  // 5 seconds between captures
 const unsigned long TRIGGER_COOLDOWN = 5000;  // 5 seconds between captures
 const unsigned long QUEUE_CHECK_INTERVAL = 30000;  // Check queue every 30 seconds
+
+#include <esp_now.h>
+
+// Data structure for ESP-NOW
+typedef struct struct_message {
+  char a[32];
+  int command; // 1 = Trigger
+} struct_message;
+
+struct_message myData;
 
 // Interrupt handler for trigger signal
 void IRAM_ATTR onTriggerReceived() {
@@ -41,11 +54,20 @@ void IRAM_ATTR onTriggerReceived() {
     }
 }
 
-void blinkLED(int times, int delayMs) {
+// Callback when data is received via ESP-NOW
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&myData, incomingData, sizeof(myData));
+  if (myData.command == 1) {
+    triggerReceived = true; // Use same flag as physical trigger
+  }
+}
+
+
+void blinkLED(int pin, int times, int delayMs) {
     for (int i = 0; i < times; i++) {
-        digitalWrite(STATUS_LED_PIN, HIGH);
+        digitalWrite(pin, HIGH);
         delay(delayMs);
-        digitalWrite(STATUS_LED_PIN, LOW);
+        digitalWrite(pin, LOW);
         
         if (i < times - 1) {
             delay(delayMs);
@@ -81,7 +103,7 @@ void uploadQueuedImages() {
                 spiffsManager.deleteImage(images[i].filename);
                 
                 // Blink to confirm
-                blinkLED(2, 100);
+                blinkLED(STATUS_LED_PIN, 2, 100);
             } else {
                 Serial.println("✗ Failed to upload queued image");
             }
@@ -99,7 +121,7 @@ void captureAndUpload() {
     Serial.println("\n========== CAPTURE TRIGGERED ==========");
     
     // Blink LED rapidly during capture
-    blinkLED(3, 50);
+    blinkLED(STATUS_LED_PIN, 3, 50);
     
     // Get current timestamp
     unsigned long timestamp = ntpSync.getCurrentTimestamp();
@@ -117,7 +139,7 @@ void captureAndUpload() {
         Serial.println("✗ Image capture failed!");
         
         // Error blink pattern
-        blinkLED(5, 50);
+        blinkLED(STATUS_LED_PIN, 5, 50);
         return;
     }
     
@@ -135,7 +157,7 @@ void captureAndUpload() {
             Serial.println("✓ Image uploaded to backend successfully!");
             
             // Success blink pattern
-            blinkLED(2, 200);
+            blinkLED(STATUS_LED_PIN, 2, 200);
         } else {
             Serial.println("✗ Backend upload failed");
         }
@@ -149,12 +171,12 @@ void captureAndUpload() {
             Serial.println("✓ Image queued in SPIFFS for later upload");
             
             // Offline mode blink pattern (3 rapid blinks)
-            blinkLED(3, 50);
+            blinkLED(STATUS_LED_PIN, 3, 50);
         } else {
             Serial.println("✗ Failed to save image to SPIFFS!");
             
             // Error pattern
-            blinkLED(5, 50);
+            blinkLED(STATUS_LED_PIN, 5, 50);
         }
     }
     
@@ -166,15 +188,28 @@ void captureAndUpload() {
 
 void setup() {
     Serial.begin(115200);
-    delay(2000);
     
+    // Add delay to allow Serial Monitor to catch up
+    delay(3000);
+    
+    Serial.println("\n\n\n"); // Clear some garbage
     Serial.println("==================================");
+    Serial.println("BOOTING ESP32-CAM...");
     Serial.println("ESP32-CAM Burglary Alert System");
     Serial.println("==================================");
     
     // Initialize status LED
     pinMode(STATUS_LED_PIN, OUTPUT);
     digitalWrite(STATUS_LED_PIN, LOW);
+
+    // Initialize Flash LED
+    pinMode(FLASH_LED_PIN, OUTPUT);
+    digitalWrite(FLASH_LED_PIN, LOW);
+
+    // Flash LED Test on Boot (User Request)
+    Serial.println("Testing Flash LED...");
+    blinkLED(FLASH_LED_PIN, 5, 50); // 5 rapid flashes
+    delay(500);
     
     // Initialize trigger input
     pinMode(TRIGGER_PIN, INPUT_PULLDOWN);
@@ -200,7 +235,7 @@ void setup() {
             camera.releaseFrameBuffer(testFb);
             
             // Success beep
-            blinkLED(2, 100);
+            blinkLED(STATUS_LED_PIN, 2, 100);
         } else {
             Serial.println("✗ Test photo failed");
         }
@@ -209,14 +244,22 @@ void setup() {
         
         // Error pattern - loop forever
         while (true) {
-            blinkLED(10, 50);
+            blinkLED(STATUS_LED_PIN, 10, 50);
             delay(1000);
         }
     }
     
     // Connect to WiFi
     Serial.println("\n--- WiFi Setup ---");
-    if (uploader.connectWiFi()) {
+    
+    int retryCount = 0;
+    while (!uploader.connectWiFi() && retryCount < 3) {
+        Serial.println("Retrying WiFi connection...");
+        retryCount++;
+        delay(2000);
+    }
+
+    if (uploader.isConnected()) {
         digitalWrite(STATUS_LED_PIN, HIGH);  // LED on = connected
         
         // Initialize NTP
@@ -232,15 +275,24 @@ void setup() {
         uploadQueuedImages();
         
     } else {
-        Serial.println("WiFi connection failed - offline mode");
+        Serial.println("WiFi connection failed after retries - offline mode");
         digitalWrite(STATUS_LED_PIN, LOW);
     }
+
+    // Init ESP-NOW (Works best if WiFi is active, but we try anyway)
+    if (esp_now_init() != ESP_OK) {
+      Serial.println("Error initializing ESP-NOW");
+    } else {
+      Serial.println("ESP-NOW Initialized");
+      esp_now_register_recv_cb(OnDataRecv);
+    }
+
     
     Serial.println("\n--- System Ready ---");
     Serial.println("Waiting for trigger signal...\n");
     
     // Final ready signal
-    blinkLED(3, 100);
+    blinkLED(STATUS_LED_PIN, 3, 100);
 }
 
 void loop() {
@@ -261,8 +313,9 @@ void loop() {
         unsigned long now = millis();
         
         // Check cooldown
-        if (now - lastTriggerTime >= TRIGGER_COOLDOWN) {
+        if (now - lastCaptureTime >= TRIGGER_COOLDOWN) {
             captureAndUpload();
+            lastCaptureTime = now;
         } else {
             Serial.println("Trigger ignored - cooldown active");
         }
@@ -283,6 +336,19 @@ void loop() {
         }
     }
     
+    // Periodic Heartbeat
+    if (now - lastHeartbeatTime > HEARTBEAT_INTERVAL_MS) {
+        lastHeartbeatTime = now;
+        if (uploader.isConnected()) {
+            Serial.println("Sending heartbeat...");
+            if (uploader.sendHeartbeat("ESP32_CAM", "online", WiFi.localIP().toString().c_str(), "v2.0")) {
+                Serial.println("✓ Heartbeat sent");
+            } else {
+                Serial.println("✗ Heartbeat failed");
+            }
+        }
+    }
+
     // Reconnect WiFi if disconnected
     if (!uploader.isConnected()) {
         static unsigned long lastReconnectAttempt = 0;

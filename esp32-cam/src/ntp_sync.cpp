@@ -3,7 +3,7 @@
  */
 
 #include "ntp_sync.h"
-#include "../include/config.h"
+#include "config.h"
 
 NTPSync::NTPSync() : timeClient(nullptr), lastSyncTime(0), synchronized(false) {
 }

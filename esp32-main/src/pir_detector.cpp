@@ -4,7 +4,7 @@
  */
 
 #include "pir_detector.h"
-#include "../include/config.h"
+#include "config.h"
 
 PIRDetector::PIRDetector(int left, int middle, int right) 
     : pinLeft(left), pinMiddle(middle), pinRight(right),

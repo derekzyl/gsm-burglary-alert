@@ -24,6 +24,7 @@ public:
     BackendClient(const char* url, const char* key);
     
     bool postAlert(HumanDetectionResult& detection, const char* networkStatus);
+    bool sendHeartbeat(const char* deviceId, const char* status, const char* ip, const char* version);
     bool connectWiFi();
     bool isConnected();
     void reconnect();
