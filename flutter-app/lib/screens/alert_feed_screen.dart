@@ -106,7 +106,7 @@ class AlertCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(alert.timestamp),
+            Text(alert.formattedTimestamp),
             Text(
               'Confidence: ${(alert.detectionConfidence * 100).toStringAsFixed(1)}%',
             ),

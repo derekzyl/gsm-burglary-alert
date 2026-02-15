@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Alert {
   final int id;
   final String timestamp;
@@ -21,10 +23,21 @@ class Alert {
     this.imageUrl,
   });
 
+  /// Parses API timestamp (ISO 8601 UTC e.g. with Z) and returns formatted local date & time.
+  String get formattedTimestamp {
+    try {
+      final dt = DateTime.parse(timestamp);
+      final local = dt.toLocal();
+      return DateFormat.yMMMd().add_Hm().format(local);
+    } catch (_) {
+      return timestamp;
+    }
+  }
+
   factory Alert.fromJson(Map<String, dynamic> json) {
     return Alert(
       id: json['id'],
-      timestamp: json['timestamp'],
+      timestamp: json['timestamp'] as String? ?? '',
       alertType: json['alert_type'],
       detectionConfidence: (json['detection_confidence'] as num).toDouble(),
       pirSensorsTriggered: json['pir_sensors_triggered'],

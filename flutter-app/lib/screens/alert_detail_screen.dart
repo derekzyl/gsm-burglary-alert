@@ -89,7 +89,7 @@ class AlertDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          alert.timestamp,
+          alert.formattedTimestamp,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
