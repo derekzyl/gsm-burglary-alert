@@ -29,9 +29,17 @@ class TelegramService with ChangeNotifier {
       final token = await _getToken();
       if (token == null) throw Exception("Authentication required");
 
-      final response = await _dio.get(
+      final response =       await _dio.get(
         '${AppConfig.baseUrl}/telegram/config',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          receiveTimeout: const Duration(
+            milliseconds: AppConfig.receiveTimeoutMs,
+          ),
+          sendTimeout: const Duration(
+            milliseconds: AppConfig.connectTimeoutMs,
+          ),
+        ),
       );
 
       _isLoading = false;
@@ -58,7 +66,11 @@ class TelegramService with ChangeNotifier {
       await _dio.post(
         '${AppConfig.baseUrl}/telegram/config',
         data: {'bot_token': botToken, 'chat_id': chatId, 'active': active},
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          receiveTimeout: const Duration(milliseconds: AppConfig.receiveTimeoutMs),
+          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeoutMs),
+        ),
       );
 
       _successMessage = "Configuration saved successfully";
@@ -85,13 +97,26 @@ class TelegramService with ChangeNotifier {
 
       await _dio.post(
         '${AppConfig.baseUrl}/telegram/test',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          receiveTimeout: const Duration(milliseconds: AppConfig.receiveTimeoutMs),
+          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeoutMs),
+        ),
       );
 
       _successMessage = "Connection test successful!";
       _isLoading = false;
       notifyListeners();
       return true;
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map
+          ? (e.response!.data['detail'] ?? e.response!.data['message'])
+          : null;
+      _error = detail?.toString() ??
+          "Connection test failed. Check token (no spaces/newlines) and chat ID.";
+      _isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
       _error = "Connection test failed. Check your token and chat ID.";
       _isLoading = false;

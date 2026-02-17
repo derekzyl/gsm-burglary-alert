@@ -36,9 +36,9 @@ class AuthService with ChangeNotifier {
         data: {'username': username, 'password': password},
         options: Options(
           receiveTimeout: const Duration(
-            milliseconds: AppConfig.receiveTimeout,
+            milliseconds: AppConfig.receiveTimeoutMs,
           ),
-          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeout),
+          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeoutMs),
         ),
       );
 

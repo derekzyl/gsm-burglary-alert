@@ -40,8 +40,8 @@ const int NUM_PHONES = 2;
 // Wiring: ESP32 TX -> SIM800L RX,  ESP32 RX <- SIM800L TX,  GND common.
 // Option A: GPIO 16/17 (if SMS works; some 38-pin boards have issues here)
 // Option B: GPIO 33/32 (recommended for ESP32 38-pin - often more stable)
-#define GSM_TX_PIN 33  // ESP32 TX -> SIM800L RX (use 16 for Option A)
-#define GSM_RX_PIN 32  // ESP32 RX <- SIM800L TX (use 17 for Option A)
+#define GSM_TX_PIN 16  // ESP32 TX -> SIM800L RX
+#define GSM_RX_PIN 17  // ESP32 RX <- SIM800L TX
 // SIM800L needs 3.4–4.4V @ 2A peak; use external supply, not ESP32 3.3V.
 
 // ESP32-CAM Trigger
@@ -68,7 +68,7 @@ const int NUM_PHONES = 2;
 
 // ==================== TIMING CONFIGURATION ====================
 #define WIFI_CONNECT_TIMEOUT_MS 10000  // WiFi connection timeout
-#define SERVER_TIMEOUT_MS 5000  // HTTP request timeout
+#define SERVER_TIMEOUT_MS 20000  // HTTP request timeout (backend may be slow/cold)
 #define HEARTBEAT_INTERVAL_MS 60000  // Status heartbeat interval
 #define SMS_RATE_LIMIT_MS 300000  // 5 minutes between SMS (cost control)
 

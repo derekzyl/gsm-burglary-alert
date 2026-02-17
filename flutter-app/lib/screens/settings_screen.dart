@@ -40,9 +40,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         options: Options(
           headers: {'Authorization': 'Bearer $token'},
           receiveTimeout: const Duration(
-            milliseconds: AppConfig.receiveTimeout,
+            milliseconds: AppConfig.receiveTimeoutMs,
           ),
-          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeout),
+          sendTimeout: const Duration(milliseconds: AppConfig.connectTimeoutMs),
         ),
       );
 

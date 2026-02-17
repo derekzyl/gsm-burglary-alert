@@ -39,12 +39,11 @@ bool GSMHandler::begin() {
         return false;
     }
     
-    // Wait for network registration
+    // Wait for network registration (up to 30 s)
     Serial.println("Waiting for network registration...");
-    for (int i = 0; i < 30; i++) {  // Try for 30 seconds
+    for (int i = 0; i < 30; i++) {
         if (isNetworkRegistered()) {
             initialized = true;
-            // Enable SIM800L netlight LED so module's LED shows network status (blink = working)
             sendATCommand("AT+CNETLIGHT=1");
             Serial.println("GSM initialized successfully! (Netlight LED enabled)");
             return true;
@@ -52,8 +51,10 @@ bool GSMHandler::begin() {
         delay(1000);
     }
     
-    Serial.println("GSM: Network registration failed");
-    return false;
+    // No network yet - still mark ready so we attempt SMS on alert (may work if signal appears later)
+    initialized = true;
+    Serial.println("GSM: No network in 30s - module ready, SMS will be attempted on alert");
+    return true;
 }
 
 bool GSMHandler::sendATCommand(const char* command, const char* expectedResponse, unsigned long timeout) {
@@ -153,46 +154,58 @@ bool GSMHandler::sendSMS(const char* phoneNumber, const char* message, bool forc
     
     Serial.printf("Sending SMS to %s\n", phoneNumber);
     
-    // Set phone number
     char cmd[64];
     sprintf(cmd, "AT+CMGS=\"%s\"", phoneNumber);
-    
-    gsmSerial->println(cmd);
-    delay(500);
-    
-    // Wait for '>'
-    unsigned long start = millis();
     bool gotPrompt = false;
-    
-    while (millis() - start < 5000) {
-        if (gsmSerial->available()) {
-            char c = gsmSerial->read();
-            if (c == '>') {
-                gotPrompt = true;
-                break;
+    const int maxTries = 2;
+
+    for (int tryNum = 0; tryNum < maxTries && !gotPrompt; tryNum++) {
+        if (tryNum > 0) {
+            Serial.println("SMS: Retrying...");
+            delay(500);
+        }
+        // Drain RX so we don't see stale data
+        while (gsmSerial->available()) gsmSerial->read();
+        delay(50);
+
+        gsmSerial->println(cmd);
+        delay(800);  // Give module time to respond
+
+        unsigned long start = millis();
+        String line;
+        while (millis() - start < 8000) {
+            if (gsmSerial->available()) {
+                char c = gsmSerial->read();
+                if (c == '>') {
+                    gotPrompt = true;
+                    break;
+                }
+                line += c;
+                if (line.length() > 80) line = line.substring(line.length() - 80);
+                if (line.indexOf("ERROR") >= 0 || line.indexOf("CMS ERROR") >= 0) {
+                    Serial.println("SMS: Module error (check number/signal)");
+                    return false;
+                }
             }
+            delay(10);
         }
     }
-    
+
     if (!gotPrompt) {
-        Serial.println("SMS: No prompt received");
+        Serial.println("SMS: No prompt received (try power/signal/wiring)");
         return false;
     }
-    
-    // Send message
+
+    // Send message body then Ctrl+Z
     gsmSerial->print(message);
-    delay(100);
-    
-    // Send Ctrl+Z to end message
+    delay(150);
     gsmSerial->write(26);
-    
-    // Wait for confirmation
-    if (waitForResponse("+CMGS:", 10000)) {
+
+    if (waitForResponse("+CMGS:", 15000)) {
         lastSMSTime = millis();
         Serial.println("SMS sent successfully!");
         return true;
     }
-    
     Serial.println("SMS send failed");
     return false;
 }

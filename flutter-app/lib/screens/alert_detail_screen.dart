@@ -17,7 +17,9 @@ class AlertDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (alert.imageUrl != null && alert.imageUrl!.isNotEmpty)
+            if (alert.imageUrl != null &&
+                alert.imageUrl!.isNotEmpty &&
+                !alert.imageUrl!.contains('/image/image'))  // upload path is POST-only
               CachedNetworkImage(
                 imageUrl: alert.imageUrl!.startsWith('http')
                     ? alert.imageUrl!

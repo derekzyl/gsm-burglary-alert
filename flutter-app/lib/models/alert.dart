@@ -36,15 +36,15 @@ class Alert {
 
   factory Alert.fromJson(Map<String, dynamic> json) {
     return Alert(
-      id: json['id'],
+      id: json['id'] as int,
       timestamp: json['timestamp'] as String? ?? '',
-      alertType: json['alert_type'],
-      detectionConfidence: (json['detection_confidence'] as num).toDouble(),
-      pirSensorsTriggered: json['pir_sensors_triggered'],
-      networkStatus: json['network_status'],
-      imageId: json['image_id'],
-      correlated: json['correlated'],
-      imageUrl: json['image_url'],
+      alertType: json['alert_type'] as String? ?? 'motion',
+      detectionConfidence: (json['detection_confidence'] as num?)?.toDouble() ?? 0.0,
+      pirSensorsTriggered: (json['pir_sensors_triggered'] as Map<String, dynamic>?) ?? {},
+      networkStatus: json['network_status'] as String? ?? 'online',
+      imageId: json['image_id'] as int?,
+      correlated: json['correlated'] as bool? ?? false,
+      imageUrl: json['image_url'] as String?,
     );
   }
 }

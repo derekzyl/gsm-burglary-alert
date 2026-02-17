@@ -55,10 +55,13 @@ bool BackendClient::postAlert(HumanDetectionResult& detection, const char* netwo
         return false;
     }
     
-    // Get current epoch time
+    // Use device time only if NTP synced (clock >= 2 days); else send 0 so backend uses server time
     time_t now = time(nullptr);
-    unsigned long timestamp = (unsigned long)now * 1000;  // Convert to milliseconds
-    
+    const unsigned long twoDaysSec = 86400UL * 2;
+    unsigned long timestamp = ((unsigned long)now >= twoDaysSec)
+        ? (unsigned long)now * 1000
+        : 0;
+
     // Prepare JSON payload
     StaticJsonDocument<512> doc;
     doc["timestamp"] = timestamp;

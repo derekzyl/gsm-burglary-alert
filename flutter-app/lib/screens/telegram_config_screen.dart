@@ -27,7 +27,9 @@ class _TelegramConfigScreenState extends State<TelegramConfigScreen> {
     final config = await context.read<TelegramService>().getConfig();
     if (config != null && mounted) {
       setState(() {
-        _tokenController.text = config['bot_token'] ?? '';
+        // Do NOT put bot_token here: API returns it MASKED (e.g. **********xyz789).
+        // Putting it in the field and saving would overwrite the real token in DB and break Telegram.
+        _tokenController.text = '';
         _chatIdController.text = config['chat_id'] ?? '';
         _active = config['active'] ?? true;
         _isLoading = false;
@@ -41,9 +43,10 @@ class _TelegramConfigScreenState extends State<TelegramConfigScreen> {
 
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
+      // Trim to avoid 404 from trailing newline/space when pasting from BotFather
       final success = await context.read<TelegramService>().saveConfig(
-        _tokenController.text,
-        _chatIdController.text,
+        _tokenController.text.trim(),
+        _chatIdController.text.trim(),
         _active,
       );
 
@@ -100,9 +103,9 @@ class _TelegramConfigScreenState extends State<TelegramConfigScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Bot Token',
                       border: OutlineInputBorder(),
-                      helperText: 'From @BotFather',
+                      helperText: 'Leave blank to keep current token. Enter new only to change. Format: 123456789:AAH...',
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) => null, // optional: leave blank to keep existing
                   ),
                   const SizedBox(height: 16),
 
@@ -111,9 +114,9 @@ class _TelegramConfigScreenState extends State<TelegramConfigScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Chat ID',
                       border: OutlineInputBorder(),
-                      helperText: 'User or Group ID',
+                      helperText: 'Numeric ID (e.g. 123456789 or -100... for groups). Send /start to bot, then get from api.telegram.org/bot<TOKEN>/getUpdates',
                     ),
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                    validator: (v) => v!.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
 

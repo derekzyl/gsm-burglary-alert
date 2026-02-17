@@ -15,13 +15,31 @@ class AlertFeedScreen extends StatefulWidget {
 }
 
 class _AlertFeedScreenState extends State<AlertFeedScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    // Fetch alerts when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AlertService>().fetchAlerts();
     });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final service = context.read<AlertService>();
+    if (!service.hasMore || service.isLoadingMore) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      service.loadMore();
+    }
   }
 
   Future<void> _refresh() async {
@@ -60,8 +78,19 @@ class _AlertFeedScreenState extends State<AlertFeedScreen> {
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView.builder(
-              itemCount: alertService.alerts.length,
+              controller: _scrollController,
+              itemCount: alertService.alerts.length + (alertService.hasMore ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index >= alertService.alerts.length) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: alertService.isLoadingMore
+                          ? const CircularProgressIndicator()
+                          : null,
+                    ),
+                  );
+                }
                 final alert = alertService.alerts[index];
                 return AlertCard(alert: alert);
               },
@@ -83,7 +112,9 @@ class AlertCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
-        leading: alert.imageUrl != null
+        leading: alert.imageUrl != null &&
+                alert.imageUrl!.isNotEmpty &&
+                !alert.imageUrl!.contains('/image/image')  // upload path is POST-only
             ? SizedBox(
                 width: 60,
                 height: 60,

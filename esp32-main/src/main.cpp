@@ -235,10 +235,10 @@ void loop() {
                         timeStr,
                         detection.confidence * 100);
                 
-                // Send to all configured numbers
+                // Send to all configured numbers (force=true so we try even if GSM init failed e.g. network reg)
                 bool anySuccess = false;
                 for (int i = 0; i < NUM_PHONES; i++) {
-                    if (gsm.sendSMS(EMERGENCY_PHONES[i], message)) {
+                    if (gsm.sendSMS(EMERGENCY_PHONES[i], message, true)) {
                         Serial.printf("✓ SMS sent to %s\n", EMERGENCY_PHONES[i]);
                         anySuccess = true;
                     } else {
