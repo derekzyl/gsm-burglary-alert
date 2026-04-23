@@ -2,11 +2,12 @@
 
 ## Core Components (Required)
 
-### 1. Microcontroller
+### 1. Microcontrollers
 | Component | Specification | Quantity | Notes |
 |-----------|--------------|----------|-------|
-| ESP32 Development Board | ESP32-WROOM-32 (or ESP32-DevKitC) | 1 | Main microcontroller with WiFi/Bluetooth |
-| ESP32 Pin Headers | Male headers for dev board | 1 set | If not included with board |
+| ESP32 Development Board | ESP32-WROOM-32 (38-pin) | 1 | Main controller with GSM/Sensors |
+| ESP32-CAM Module | AI-Thinker ESP32-CAM + OV2640 | 1 | Wireless camera for image capture |
+| ESP32 Pin Headers | Male headers for boards | 2 sets | If not included with boards |
 
 ### 2. GSM Module
 | Component | Specification | Quantity | Notes |
@@ -20,9 +21,9 @@
 ### 3. Sensors
 | Component | Specification | Quantity | Notes |
 |-----------|--------------|----------|-------|
-| PIR Motion Sensor | HC-SR501 | 2-4 | Room intrusion detection |
+| PIR Motion Sensor | HC-SR501 | 3 | Left, Middle, Right detection |
 | Magnetic Reed Switch | Door/Window sensor | 2-6 | For doors and windows |
-| Shock/Vibration Sensor | Piezo knock sensor or SW-420 | 1-2 | Tamper/vibration detection |
+| Shock/Vibration Sensor | SW-420 | 1 | Tamper/vibration detection |
 | Tamper Switch | Magnetic or micro switch | 1 | Enclosure tamper detection |
 | Reed Switch Magnet | For magnetic sensors | 2-6 | Matches number of reed switches |
 
@@ -87,7 +88,7 @@
 | 433MHz Antennas | Quarter-wave antenna | 1 per module | Improve range |
 | Battery Holder | 2xAA or 3xAA holder | Per wireless sensor | For battery-powered sensors |
 
-**Alternative:** Use ESP-NOW or BLE mesh for wireless sensors if using multiple ESP32s
+**Alternative:** Use ESP-NOW (included in firmware) for wireless image capture trigger between the Main ESP32 and ESP32-CAM.
 
 ## Additional Tools & Supplies
 

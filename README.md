@@ -7,8 +7,9 @@ A comprehensive IoT burglary alarm system using ESP32, GSM module (SIM800L), mul
 ```
 gsm-burglary-alarm/
 ├── backend/          # FastAPI backend server
-├── burglary_app/     # Flutter mobile application
-├── firmware/         # ESP32 firmware (PlatformIO)
+├── flutter-app/      # Flutter mobile application
+├── esp32-main/       # Main Controller firmware (PlatformIO)
+├── esp32-cam/        # ESP32-CAM firmware (PlatformIO)
 └── BOM.md           # Bill of Materials
 ```
 
@@ -18,10 +19,12 @@ gsm-burglary-alarm/
 - **Intrusion Detection**: PIR motion sensors, magnetic door/window sensors
 - **Tamper Detection**: Shock/vibration sensors, enclosure tamper switch
 - **Multi-Channel Alerts**:
-  - GSM SMS notifications
+  - **Image Capture**: High-resolution snapshots uploaded on detection
+  - GSM SMS notifications (Top Priority)
   - GSM voice calls (optional)
   - HTTP API notifications
   - Push notifications via Firebase
+- **Dual Trigger System**: Wireless ESP-NOW trigger with physical wire fallback
 - **Remote Control**: Arm/disarm via mobile app or SMS
 - **Battery Backup**: Automatic failover to battery power
 - **Status Monitoring**: Real-time device status, battery level, GSM signal strength
@@ -43,24 +46,26 @@ gsm-burglary-alarm/
 - Device status dashboard
 
 ### Firmware Features
-- Multi-sensor monitoring (PIR, magnetic, shock, tamper)
-- GSM module communication (SIM800L)
-- WiFi connectivity for HTTP notifications
-- Configurable alarm delay
-- Silent mode (notifications only, no siren)
-- Heartbeat to backend server
-- Automatic sensor registration
+- **Intrusion Logic**: 3-sensor PIR array (Left, Middle, Right) for high-confidence detection
+- **Image Capture**: Automatic ESP32-CAM triggering via ESP-NOW
+- **Offline Storage**: Image queuing to SPIFFS when WiFi is unavailable
+- **GSM module communication** (SIM800L)
+- **WiFi connectivity** for HTTP notifications
+- **Configurable alarm delay**
+- **Silent mode** (notifications only, no siren)
+- **Heartbeat** to backend server
+- **Automatic sensor registration**
 
 ## Hardware Requirements
 
 See [BOM.md](BOM.md) for complete bill of materials.
 
 ### Essential Components
-- ESP32-WROOM32 development board
+- ESP32-WROOM32 development board (Main Unit)
+- ESP32-CAM AI-Thinker module
 - SIM800L GSM module
-- HC-SR501 PIR sensors (2-4 units)
+- HC-SR501 PIR sensors (3 units: Left, Middle, Right)
 - Magnetic reed switches (2-6 units)
-- Shock/vibration sensor (1-2 units)
 - 12V siren with relay
 - 12V power supply (3A+) with battery backup
 - Tamper switch for enclosure
@@ -102,7 +107,7 @@ API documentation: `http://localhost:8000/docs`
 
 1. **Install Dependencies**
 ```bash
-cd burglary_app
+cd flutter-app
 flutter pub get
 ```
 
@@ -119,25 +124,27 @@ flutter run
 
 ### Firmware Setup
 
+The system consists of two firmware projects that communicate via **ESP-NOW**.
+
 1. **Install PlatformIO**
 ```bash
 pip install platformio
 ```
 
-2. **Configure Settings**
-Edit `include/config.h`:
-- WiFi SSID and password
-- Backend API URL
-- Device ID (unique for each device)
-- Sensor pin assignments
-- Phone numbers for SMS alerts
+2. **Setup ESP32 Main Controller**
+   - Edit `esp32-main/include/config.h`
+   - Set WiFi credentials and Backend URL
+   - **CRITICAL**: Update `ESP32_CAM_MAC` with the MAC address of your ESP32-CAM board.
+   - Run: `cd esp32-main && pio run -t upload`
 
-3. **Build and Upload**
-```bash
-cd firmware
-pio run -t upload
-pio device monitor  # Monitor serial output
-```
+3. **Setup ESP32-CAM**
+   - Edit `esp32-cam/include/config.h`
+   - Set WiFi credentials and Backend URL
+   - Run: `cd esp32-cam && pio run -t upload`
+
+4. **Wiring Fallback**
+   - Connect GPIO 27 (Main) to GPIO 13 (CAM) for the physical trigger fallback.
+   - Ensure a common GND between both boards.
 
 ## Configuration
 
@@ -157,13 +164,12 @@ Edit `firmware/include/config.h`:
 
 Default pin configuration (adjust in `config.h` as needed):
 - **SIM800L**: RX=16, TX=17, PWR=4, RST=5
-- **PIR Sensors**: Pins 27, 26
-- **Magnetic Sensors**: Pins 25, 33 (with pull-up)
-- **Shock Sensor**: Pin 32
-- **Tamper Switch**: Pin 14
+- **PIR Sensors**: Left=22, Middle=23, Right=21
+- **ESP32-CAM Trigger**: Pin 27 (Physical Fallback)
 - **Siren Relay**: Pin 12
-- **Buzzer**: Pin 13
-- **LED Status**: Pin 2 (built-in LED)
+- **Buzzer**: Pin 25
+- **Status LED**: Pin 2
+- **SIM Status LED**: Pin 4
 
 ### Backend Configuration
 
@@ -302,6 +308,6 @@ For issues and questions:
 ---
 
 **Version:** 1.0.0
-**Last Updated:** 2024
+**Last Updated:** 2026
 
 # gsm-burglary-alert
